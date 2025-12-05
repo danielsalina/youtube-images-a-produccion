@@ -1,0 +1,53 @@
+services:
+  backend:
+    build: ./backend
+    user: root
+    ports:
+      - "${BACKEND_PORT}:3000"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    entrypoint: ["sh", "-c", "npm install && npm run dev"]
+    environment:
+      DB_USER: "${DB_USER}"
+      DB_PASSWORD: "${DB_PASSWORD}"
+      DB_NAME: "${DB_NAME}"
+      DB_PORT: "${DB_PORT}"
+    secrets:
+      - npm_token
+    depends_on:
+      - db
+
+  frontend:
+    build: ./frontend
+    user: root
+    ports:
+      - "${FRONTEND_PORT}:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    entrypoint: ["sh", "-c", "npm install && npm run dev"]
+    environment:
+      VITE_API_URL: "http://localhost:3001"
+    secrets:
+      - npm_token
+    depends_on:
+      - backend
+
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: "${DB_USER}"
+      POSTGRES_PASSWORD: "${DB_PASSWORD}"
+      POSTGRES_DB: "${DB_NAME}"
+    ports:
+      - "${DB_PORT}:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+volumes:
+  db_data:
+
+secrets:
+  npm_token:
+    file: ./backend/.npm_token
